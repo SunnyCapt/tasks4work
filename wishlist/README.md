@@ -5,7 +5,7 @@
 > Required Technologies: MySQL, Python + PyQT. 
     
     git clone https://github.com/SunnyCapt/tasks4work.git
-    tasks4work/wishlist
+    cd tasks4work/wishlist
     cd db && docker-compose up -d && cd ..
     pip install -r requirements.txt
     python app
