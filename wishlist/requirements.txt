@@ -1,2 +1,8 @@
 PyQt5==5.14.1
 PyQt5-sip==12.7.0
+importlib-metadata==1.4.0
+more-itertools==8.1.0
+helpdev==0.6.10
+psutil==5.6.7
+QDarkStyle==2.7
+zipp==0.6.0

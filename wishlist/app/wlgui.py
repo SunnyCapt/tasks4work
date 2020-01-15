@@ -1,7 +1,8 @@
 import sys
-from typing import List
 import json
+import qdarkstyle
 
+from typing import List
 from PyQt5.QtCore import (QEvent, Qt)
 from PyQt5.Qt import QDesktopWidget
 from PyQt5.QtWidgets import (
@@ -14,8 +15,6 @@ from settings import GUISettings
 
 
 # TODO:
-#  добавить стили;
-#  определять размер окна в зависимости от размера экрана;
 #  порефакторить;
 #  доделать контроллер;
 #  добавить логгирование, аннотации и доки
@@ -36,6 +35,7 @@ class WLTextEdit(QTextEdit):
         self.label = label
         self.wish_id = wish_id
         self.is_changed_now = False
+        self.set_alignment()
 
     @classmethod
     def is_wish_instance(cls, obj):
@@ -87,7 +87,11 @@ class WLWidget(QWidget):
 
     def _init_labels(self) -> None:
         for i, label_value in enumerate(self._labels):
-            label = QLabel(label_value)
+            label = QLabel(
+                f"<font color='red' size='5' face='SansSerif'>"
+                f"{label_value.title()}"
+                f"</font>"
+            )
             label.setAlignment(Qt.AlignCenter | Qt.AlignTop)
             label.setMaximumHeight(50)
             self.layout().addWidget(label, 0, i)
@@ -96,11 +100,10 @@ class WLWidget(QWidget):
         layout: QGridLayout = self.layout()
         for i in range(4):
             textbox = WLTextEdit(self._labels[i])
-            textbox.set_alignment()
             textbox.setMaximumHeight(90)
             layout.addWidget(textbox, 1, i)
         button = QPushButton("+")
-        button.setMaximumSize(60, 90)
+        button.setFixedSize(60, 80)
         button.clicked.connect(self._create_button_clicked)
         layout.addWidget(button, 1, 4)
 
@@ -157,12 +160,11 @@ class WLWidget(QWidget):
         wish_widgets = []
         for i in range(4):
             textbox = WLTextEdit(self._labels[i], f"{src_wish[i + 1]}", src_wish[0], self)
-            textbox.set_alignment()
             textbox.setMaximumHeight(80)
             textbox.installEventFilter(self)
             wish_widgets.append(textbox)
         button = WLPushButton("x", src_wish[0])
-        button.setMaximumSize(60, 80)
+        button.setFixedSize(60, 80)
         button.clicked.connect(self._delete_button_clicked)
         wish_widgets.append(button)
         self._replace_wish_line(line_number, wish_widgets)
@@ -182,12 +184,12 @@ class WLWidget(QWidget):
         layout: QGridLayout = self.layout()
 
         self._previous_button = QPushButton("<<")
-        self._previous_button.setMaximumSize(60, 80)
+        self._previous_button.setFixedSize(60, 80)
         self._previous_button.clicked.connect(self._previous_button_clicked)
         self._previous_button.setVisible(False)
 
         self._next_button = QPushButton(">>")
-        self._next_button.setMaximumSize(60, 80)
+        self._next_button.setFixedSize(60, 80)
         self._next_button.clicked.connect(self._next_button_clicked)
         self._next_button.setVisible(False)
 
@@ -222,8 +224,14 @@ class WLWidget(QWidget):
         try:
             self._controller.create(**new_wish)
             self.update_wishlist_view()
+        except ValueError as e:
+            self.show_message(str(e))
+            wish_item.undo()
         except Exception as e:
-            print(e)
+            # todo: logging error
+            print(repr(e))
+            self.show_message("Failed to update")
+            wish_item.undo()
 
     def _delete_button_clicked(self):
         sender: WLPushButton = self.sender()
@@ -264,11 +272,21 @@ class WLWidget(QWidget):
         current_value = wish_item.toPlainText()
         if current_value.strip(" \n") != wish_item.previous_value.strip(" \n"):
             to_update = {"id": wish_item.wish_id, wish_item.label: current_value}
-            self._controller.update(to_update)
+            try:
+                self._controller.update(to_update)
+            except ValueError as e:
+                self.show_message(str(e))
+                wish_item.undo()
+            except Exception as e:
+                # todo: logging error
+                print(repr(e))
+                self.show_message("Failed to update")
+                wish_item.undo()
         wish_item.clearFocus()
 
     @classmethod
     def run(cls):
         app = QApplication(sys.argv)
+        app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
         window = cls()
         sys.exit(app.exec_())
