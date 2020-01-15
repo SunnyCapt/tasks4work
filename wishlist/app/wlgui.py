@@ -1,5 +1,6 @@
 import sys
 from typing import List
+import json
 
 from PyQt5.QtCore import (QEvent, Qt)
 from PyQt5.Qt import QDesktopWidget
@@ -9,25 +10,15 @@ from PyQt5.QtWidgets import (
 )
 
 from controller import Controller
+from settings import GUISettings
 
 
 # TODO:
-#  сделать сеттингсы нормальные;
 #  добавить стили;
 #  определять размер окна в зависимости от размера экрана;
 #  порефакторить;
 #  доделать контроллер;
 #  добавить логгирование, аннотации и доки
-
-
-class settings:
-    line_count = 15  # you can change it
-    first_wish_line_number = 2
-    wish_view_count = line_count - 3
-    last_wish_line_number = first_wish_line_number + wish_view_count
-    navigation_buttons_line_number = line_count - 1
-    window_width = int(1100 * line_count / 9)
-    window_height = int(800 * line_count / 9)
 
 
 class WLPushButton(QPushButton):
@@ -67,11 +58,12 @@ class WLTextEdit(QTextEdit):
 
 
 class WLWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, settings=GUISettings, parent=None):
         super().__init__(parent=parent)
-        self.controller = Controller()
-        self.labels = ("title", "price", "link", "note")
-        self.context = {"wish_count": 0, "page": 0}
+        self._controller = Controller()
+        self._labels = ("title", "price", "link", "note")
+        self._context = {"wish_count": 0, "page": 0}
+        self._settings = settings
         self.initUI()
 
     def initUI(self):
@@ -82,7 +74,7 @@ class WLWidget(QWidget):
         self._init_buttons()
         self.update_wishlist_view(True)
 
-        self.setFixedSize(settings.window_width, settings.window_height)
+        self.setFixedSize(int(1100 * self._settings.zoom), int(800 * self._settings.zoom))
         self.setWindowTitle("Wish List")
         self._move_window_to_center()
         self.show()
@@ -94,7 +86,7 @@ class WLWidget(QWidget):
         self.setLayout(grid)
 
     def _init_labels(self) -> None:
-        for i, label_value in enumerate(self.labels):
+        for i, label_value in enumerate(self._labels):
             label = QLabel(label_value)
             label.setAlignment(Qt.AlignCenter | Qt.AlignTop)
             label.setMaximumHeight(50)
@@ -103,49 +95,49 @@ class WLWidget(QWidget):
     def _init_new_wish_textboxes(self) -> None:
         layout: QGridLayout = self.layout()
         for i in range(4):
-            textbox = WLTextEdit(self.labels[i])
+            textbox = WLTextEdit(self._labels[i])
             textbox.set_alignment()
             textbox.setMaximumHeight(90)
             layout.addWidget(textbox, 1, i)
         button = QPushButton("+")
         button.setMaximumSize(60, 90)
-        button.clicked.connect(self.create_button_clicked)
+        button.clicked.connect(self._create_button_clicked)
         layout.addWidget(button, 1, 4)
 
     def _init_message_box(self):
-        self.message_box = QMessageBox()
-        self.message_box.resize(1000, 1000)
+        self._message_box = QMessageBox()
+        self._message_box.resize(1000, 1000)
 
     def update_wishlist_view(self, is_init=False):
-        count = settings.wish_view_count
-        self.context["wish_count"] = 0
-        wishes = self.controller.read(
+        count = self._settings.wish_view_count
+        self._context["wish_count"] = 0
+        wishes = self._controller.read(
             count,
-            count * self.context["page"]
+            count * self._context["page"]
         )
 
         for wish in wishes:
             self._add_wish(wish)
         self._normalize_layout(is_init)
-        need_show_next_button = self.controller.count() - self.context["page"] * \
-                                settings.wish_view_count > self.context["wish_count"]
+        need_show_next_button = self._controller.count() - self._context["page"] * \
+                                self._settings.wish_view_count > self._context["wish_count"]
         if need_show_next_button:
-            self.next_button.setVisible(True)
-        elif self.next_button.isVisible():
-            self.next_button.setVisible(False)
+            self._next_button.setVisible(True)
+        elif self._next_button.isVisible():
+            self._next_button.setVisible(False)
 
-        if self.context["page"] > 0:
-            self.previous_button.setVisible(True)
-        elif self.previous_button.isVisible():
-            self.previous_button.setVisible(False)
+        if self._context["page"] > 0:
+            self._previous_button.setVisible(True)
+        elif self._previous_button.isVisible():
+            self._previous_button.setVisible(False)
 
     def _normalize_layout(self, is_init):
-        if self.context["wish_count"] == settings.wish_view_count:
+        if self._context["wish_count"] == self._settings.wish_view_count:
             return
 
         range_to_fix = range(
-            self.context["wish_count"] + settings.first_wish_line_number,
-            settings.last_wish_line_number
+            self._context["wish_count"] + self._settings.first_wish_line_number,
+            self._settings.last_wish_line_number
         )
 
         for line in range_to_fix:
@@ -158,23 +150,23 @@ class WLWidget(QWidget):
         self.move(qreact.topLeft())
 
     def _add_wish(self, src_wish: tuple) -> None:
-        if self.context["wish_count"] > (settings.wish_view_count - 1):
+        if self._context["wish_count"] > (self._settings.wish_view_count - 1):
             return
 
-        line_number = settings.first_wish_line_number + self.context["wish_count"]
+        line_number = self._settings.first_wish_line_number + self._context["wish_count"]
         wish_widgets = []
         for i in range(4):
-            textbox = WLTextEdit(self.labels[i], f"{src_wish[i + 1]}", src_wish[0], self)
+            textbox = WLTextEdit(self._labels[i], f"{src_wish[i + 1]}", src_wish[0], self)
             textbox.set_alignment()
             textbox.setMaximumHeight(80)
             textbox.installEventFilter(self)
             wish_widgets.append(textbox)
         button = WLPushButton("x", src_wish[0])
         button.setMaximumSize(60, 80)
-        button.clicked.connect(self.delete_button_clicked)
+        button.clicked.connect(self._delete_button_clicked)
         wish_widgets.append(button)
         self._replace_wish_line(line_number, wish_widgets)
-        self.context["wish_count"] += 1
+        self._context["wish_count"] += 1
 
     def _replace_wish_line(self, line, widgets):
         layout = self.layout()
@@ -189,36 +181,36 @@ class WLWidget(QWidget):
     def _init_buttons(self):
         layout: QGridLayout = self.layout()
 
-        self.previous_button = QPushButton("<<")
-        self.previous_button.setMaximumSize(60, 80)
-        self.previous_button.clicked.connect(self._previous_button_clicked)
-        self.previous_button.setVisible(False)
+        self._previous_button = QPushButton("<<")
+        self._previous_button.setMaximumSize(60, 80)
+        self._previous_button.clicked.connect(self._previous_button_clicked)
+        self._previous_button.setVisible(False)
 
-        self.next_button = QPushButton(">>")
-        self.next_button.setMaximumSize(60, 80)
-        self.next_button.clicked.connect(self._next_button_clicked)
-        self.next_button.setVisible(False)
+        self._next_button = QPushButton(">>")
+        self._next_button.setMaximumSize(60, 80)
+        self._next_button.clicked.connect(self._next_button_clicked)
+        self._next_button.setVisible(False)
 
-        layout.addWidget(self.previous_button, settings.navigation_buttons_line_number, 0)
-        layout.addWidget(self.next_button, settings.navigation_buttons_line_number, 4)
+        layout.addWidget(self._previous_button, self._settings.navigation_buttons_line_number, 0)
+        layout.addWidget(self._next_button, self._settings.navigation_buttons_line_number, 4)
 
     def show_message(self, text, title="Error", info=""):
-        self.message_box.setText(text)
-        self.message_box.setWindowTitle(title)
-        self.message_box.setInformativeText(info)
-        self.message_box.show()
+        self._message_box.setText(text)
+        self._message_box.setWindowTitle(title)
+        self._message_box.setInformativeText(info)
+        self._message_box.show()
 
     def _previous_button_clicked(self):
         print(f"clicked `{self.sender().text()}` button")
-        self.context["page"] -= 1
+        self._context["page"] -= 1
         self.update_wishlist_view()
 
     def _next_button_clicked(self):
         print(f"clicked `{self.sender().text()}` button")
-        self.context["page"] += 1
+        self._context["page"] += 1
         self.update_wishlist_view()
 
-    def create_button_clicked(self):
+    def _create_button_clicked(self):
         sender: WLPushButton = self.sender()
         layout: QGridLayout = self.layout()
         index = layout.indexOf(sender)
@@ -228,30 +220,30 @@ class WLWidget(QWidget):
             new_wish.update({textbox.label: textbox.toPlainText()})
             textbox.setText("")
         try:
-            self.controller.create(**new_wish)
+            self._controller.create(**new_wish)
             self.update_wishlist_view()
         except Exception as e:
             print(e)
 
-    def delete_button_clicked(self):
+    def _delete_button_clicked(self):
         sender: WLPushButton = self.sender()
-        self.controller.delete(sender.wish_id)
+        self._controller.delete(sender.wish_id)
         self.update_wishlist_view()
 
-    def eventFilter(self, obj: WLTextEdit, event):
+    def eventFilter(self, obj, event):
         if WLTextEdit.is_wish_instance(obj):
-            self.wish_textbox_event_handler(obj, event)
+            self._wish_textbox_event_handler(obj, event)
         return super().eventFilter(obj, event)
 
-    def wish_textbox_event_handler(self, wish_item, event):
+    def _wish_textbox_event_handler(self, wish_item, event):
         if event.type() == QEvent.FocusIn:
             print("in focus")
-            self.on_focus_wish(wish_item)
+            self._on_focus_wish(wish_item)
         elif not wish_item.is_changed_now:
             if event.type() == QEvent.KeyPress:
                 if event.key() == Qt.Key_Return:
                     print("changed value")
-                    self.on_changed_wish(wish_item)
+                    self._on_changed_wish(wish_item)
                 elif event.key() == Qt.Key_Escape:
                     print("set previous value")
                     wish_item.undo()
@@ -260,19 +252,19 @@ class WLWidget(QWidget):
             elif event.type() == QEvent.FocusOut:
                 print("changed value")
                 wish_item.is_changed_now = True
-                self.on_changed_wish(wish_item)
+                self._on_changed_wish(wish_item)
 
-    def on_focus_wish(self, wish_item):
+    def _on_focus_wish(self, wish_item):
         wish_item.setCursorWidth(1)
         wish_item.setTextCursor(wish_item.textCursor())
         wish_item.is_changed_now = False
         wish_item.previous_value = wish_item.toPlainText()
 
-    def on_changed_wish(self, wish_item: WLTextEdit):
+    def _on_changed_wish(self, wish_item: WLTextEdit):
         current_value = wish_item.toPlainText()
         if current_value.strip(" \n") != wish_item.previous_value.strip(" \n"):
             to_update = {"id": wish_item.wish_id, wish_item.label: current_value}
-            self.controller.update(to_update)
+            self._controller.update(to_update)
         wish_item.clearFocus()
 
     @classmethod
@@ -280,7 +272,3 @@ class WLWidget(QWidget):
         app = QApplication(sys.argv)
         window = cls()
         sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    WLWidget.run()

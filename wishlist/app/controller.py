@@ -1,3 +1,7 @@
+from random import randint
+from settings import ControllerSettings
+
+
 class Controller:
     _db = [
         {
@@ -5,15 +9,15 @@ class Controller:
             "title": "external hard drive",
             "price": 3070.75,
             "link": "https://www.citilink.ru/catalog/computers_and_notebooks/media/hdd_out/294583/",
-            "note": "some note"
+            "note": "".join(chr(randint(97, 122)) for _ in range(15))
         }
-        for i in range(1, 12)
+        for i in range(1, 15)
     ]  # id[int][notnull], title[str][notnull], price[float][notnull], link[str][notnull], note[str][nullable]
 
     _keys = ("id", "title", "price", "link", "note")
 
-    def __init__(self, settings=None):
-        pass
+    def __init__(self, settings=ControllerSettings):
+        self.settings = settings
 
     def _to_tuple(self, wish):
         return tuple(wish[key] for key in self._keys)
