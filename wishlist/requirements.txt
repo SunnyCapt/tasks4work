@@ -1,3 +1,4 @@
+PyMySQL==0.9.3d
 PyQt5==5.14.1
 PyQt5-sip==12.7.0
 importlib-metadata==1.4.0
