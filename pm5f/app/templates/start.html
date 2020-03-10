@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block style %}
+#button {
+    text-decoration: none;
+    outline: none;
+    display: inline-block;
+    color: white;
+    padding: 15px 22px;
+    margin: 10px 20px;
+    border-radius: 10px;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 2px;
+    background-image: linear-gradient(to right, #9917ff 0%, #4830F0 51%, #ff33ff 100%);
+    background-size: 200% auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, .1);
+    transition: .5s;
+    font-size: 13px;
+}
+#app-name {
+
+            padding-top: 50px;
+            text-align: center;
+            color: brown;
+            text-decoration: none;
+            font-size: 45px;
+            font-weight: bold;
+}
+{% endblock %}
+{% block content %}
+    <div id="app-name">
+        PM5F - Print My 5 Friends
+    </div>
+    <div style="padding-top: 10%; text-align: center;">
+        <a id="button" href="{{ oauth_url }}">АВТОРИЗОВАТЬСЯ</a>
+    </div>
+{% endblock %}

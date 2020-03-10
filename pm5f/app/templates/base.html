@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="../static/logo.png"/>
+    <title>PMF</title>
+    <style>
+        #contact {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            padding: 10px;
+            background: #222246;
+            color: #fff;
+            width: 100%;
+            font-size: 19px;
+        }
+        {% block style %}{% endblock %}
+    </style>
+</head>
+<body style="background-color: #222226;">
+    {% block content %}{% endblock %}
+    <div id="contact">
+        email: sunny.capt@tuta.io<br>tg: lambda_function<br>
+    </div>
+</body>
+</html>

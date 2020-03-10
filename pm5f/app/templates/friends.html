@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block style %}
+#exit {
+            font-size: 20px;
+            text-decoration: none;
+            color: blanchedalmond;
+        }
+{% endblock %}
+{% block content %}
+<a id="exit" href="/exit/">Выход</a>
+<center style="padding-top: 10%;">
+    <p style="font-size: 30px; color: firebrick;">Вы и ваши друзья:</p>
+    {% for friend in friends%}
+    <br><a style="font-size: 25px; color: blanchedalmond; text-decoration: none;"
+           href="http://vk.com/id{{ friend.id }}">{{ friend.first_name }}&nbsp;{{ friend.last_name }}</a>
+    {% endfor %}
+</center>
+{% endblock %}
