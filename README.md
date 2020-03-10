@@ -5,6 +5,7 @@
 <pre>
 Array
 (
-    [wish-list] => <a href="./wishlist">./wishlist</a>
+    [wish-list] => <a href="./wishlist">./wishlist</a>,
+    [print-my-5-friends] => <a href="./pm5f">./pm5f</a>
 )
 </pre>
