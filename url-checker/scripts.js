@@ -30,7 +30,7 @@ async function checkUrl(url) {
   }
 
   try {
-    const response = await fetch(`/check?url=${url}`);
+    const response = await fetch(`/url-checker/check?url=${url}`);
     const data = await response.json();
     console.log(data);
     result = `${data.is_exists?'exists':'does not exist'}`
