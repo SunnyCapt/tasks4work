@@ -6,4 +6,4 @@ more-itertools==8.1.0
 helpdev==0.6.10
 psutil==5.6.7
 QDarkStyle==2.7
-zipp==0.6.0
+zipp==3.19.1
